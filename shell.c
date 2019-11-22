@@ -32,6 +32,12 @@ int _strcmp(char *s1, char *s2)
        return (compare);
 }
 
+int exit_func (char *argv[])
+{
+	/* salida = "exit\n"; */
+	printf("exit func:%s\n",argv[0]);
+	return (0);
+}
 int  main ()
 {
 	char *buffer, *token, *salida;
@@ -59,11 +65,6 @@ int  main ()
 			free (buffer);
 			return (0);
 		}
-		if (_strcmp(salida, buffer) == 0)
-		{
-			free(buffer);
-			return (0);;
-		}
 		if ((child_pid = fork()) == 0)
 		{
 			token = strtok(buffer, " \n\t");
@@ -74,6 +75,12 @@ int  main ()
 				i++;
 			}
 			argv[i] = NULL;
+			exit_func (argv);
+			if (_strcmp(salida, argv[0]) == 0)
+			{
+				free(buffer);
+				return (0);
+			}
 			if (execve(argv[0], argv, NULL) == -1)
 				perror("Error");
 			kill(getpid(), SIGKILL);
