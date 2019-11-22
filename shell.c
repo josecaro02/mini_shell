@@ -37,43 +37,49 @@ int  main ()
 	size_t bufsize = 1024;
 	size_t characters;
 	char *argv[256];
-	int num_words, i, f, a;
+	int num_words, i, f, exec_status, atty;
+	pid_t child_pid;
 
-	num_words = 0;
-	i = 0;
+	i = num_words = 0;
 	salida = "exit\n";
 	buffer = malloc(bufsize * sizeof(char));
 	if (buffer == NULL)
 		return (0);
-	while (1)
+	if (!(atty = isatty(fileno(stdin))))
 	{
-		write(1, "$ ", 2);
-		signal(SIGINT, signalhandler);
-		characters = getline(&buffer,&bufsize,stdin);
-		if (a = _strcmp(salida, buffer) == 0)
-		{
-			free(buffer);
-			exit(98);
-		}
-
-		if (fork() == 0)
-		{
-			token = strtok(buffer, " \n\t");
-			while (token != NULL)
-			{
-				argv[i] = token;
-				printf("text: %s\n", argv[i]);
-				token = strtok(NULL, " \n\t");
-				i++;
-			}
-			argv[i] = NULL;
-			execve(argv[0], argv, NULL);
-			for ( i = 0; argv[i] != NULL; i++ )
-				argv[i] = NULL;
-			exit(1);
-		}
-		else
-			wait(NULL);
+		printf("is echo");
 	}
+	else
+	{
+		while (1)
+		{
+			write(1, "$ ", 2);
+			signal(SIGINT, signalhandler);
+			characters = getline(&buffer,&bufsize,stdin);
+			if (_strcmp(salida, buffer) == 0)
+			{
+				free(buffer);
+				return (0);;
+			}
+			if ((child_pid = fork()) == 0)
+			{
+				token = strtok(buffer, " \n\t");
+				while (token != NULL)
+				{
+					argv[i] = token;
+					token = strtok(NULL, " \n\t");
+					i++;
+				}
+				argv[i] = NULL;
+				execve(argv[0], argv, NULL);
+				kill(getpid(), SIGKILL);
+			}
+			else
+			{
+				waitpid(child_pid), exec_status, 0;
+			}
+		}
+	}
+	printf("atty %d\n", atty);
 	return (0);
 }
