@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <signal.h>
 
 
@@ -35,51 +36,52 @@ int  main ()
 {
 	char *buffer, *token, *salida;
 	size_t bufsize = 1024;
-	size_t characters;
+	int characters;
 	char *argv[256];
-	int num_words, i, f, exec_status, atty;
+	int i, exec_status, atty;
 	pid_t child_pid;
 
-	i = num_words = 0;
+	i = atty = 0;
 	salida = "exit\n";
 	buffer = malloc(bufsize * sizeof(char));
 	if (buffer == NULL)
 		return (0);
-	if (!(atty = isatty(fileno(stdin))))
+	if (!(isatty(fileno(stdin))))
+		atty = 1;
+	while (1)
 	{
-		printf("is echo");
-	}
-	else
-	{
-		while (1)
-		{
+		if (atty == 0)
 			write(1, "$ ", 2);
-			signal(SIGINT, signalhandler);
-			characters = getline(&buffer,&bufsize,stdin);
-			if (_strcmp(salida, buffer) == 0)
+		signal(SIGINT, signalhandler);
+		characters = getline(&buffer,&bufsize,stdin);
+		if (characters == -1)
+		{
+			free (buffer);
+			return (0);
+		}
+		if (_strcmp(salida, buffer) == 0)
+		{
+			free(buffer);
+			return (0);;
+		}
+		if ((child_pid = fork()) == 0)
+		{
+			token = strtok(buffer, " \n\t");
+			while (token != NULL)
 			{
-				free(buffer);
-				return (0);;
+				argv[i] = token;
+				token = strtok(NULL, " \n\t");
+				i++;
 			}
-			if ((child_pid = fork()) == 0)
-			{
-				token = strtok(buffer, " \n\t");
-				while (token != NULL)
-				{
-					argv[i] = token;
-					token = strtok(NULL, " \n\t");
-					i++;
-				}
-				argv[i] = NULL;
-				execve(argv[0], argv, NULL);
-				kill(getpid(), SIGKILL);
-			}
-			else
-			{
-				waitpid(child_pid), exec_status, 0;
-			}
+			argv[i] = NULL;
+			if (execve(argv[0], argv, NULL) == -1)
+				perror("Error");
+			kill(getpid(), SIGKILL);
+		}
+		else
+		{
+			waitpid((child_pid), &exec_status, 0);
 		}
 	}
-	printf("atty %d\n", atty);
 	return (0);
 }
