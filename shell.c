@@ -43,21 +43,16 @@ int exit_func (char **argv)
 		}
 		exit(0);
 	}
-	return (-1);
+	return (0);
 }
 
 void excess_argv(char *argv0, char *argv1)
 {
-	int size1, size2, size3;
 	char *text = ": 0: Can't open ";
 	char *text2 = "\n";
-
-	size1 = _strlen_recursion(argv0);
-	size2 = _strlen_recursion(argv1);
-	size3 = _strlen_recursion(text);
- 	write(1, argv0, size1);
-	write(1, text, size3);
-	write(1, argv1, size2);
+ 	write(1, argv0, _strlen_recursion(argv0));
+	write(1, text, _strlen_recursion(text));
+	write(1, argv1, _strlen_recursion(argv1));
 	write(1, text2, 1);
 	exit(127);
 
@@ -84,6 +79,8 @@ int  main (int argc, char *argum[])
 			write(1, "$ ", 2);
 		signal(SIGINT, signalhandler);
 		characters = getline(&buffer,&bufsize,stdin);
+		for ()
+		{}
 		token = strtok(buffer, " \n\t");
 		while (token != NULL)
 		{
@@ -92,6 +89,7 @@ int  main (int argc, char *argum[])
 			i++;
 		}
 		argv[i] = NULL;
+		printf("characters: %d\n", characters);
 		if (characters == -1)
 		{
 			free (buffer);
@@ -105,13 +103,9 @@ int  main (int argc, char *argum[])
 			kill(getpid(), SIGKILL);
 		}
 		else
-		{
 			waitpid((child_pid), &exec_status, 0);
-		}
 		for (j = 0; j < i ; j++)
-		{
 			argv[i] = NULL;
-		}
 		i = 0;
 	}
 	return (0);
