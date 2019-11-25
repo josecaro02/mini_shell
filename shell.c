@@ -1,14 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <signal.h>
-
-
+#include "header.h"
 /**
 * signalhandler - Ignore CTRL + C.
 *
@@ -32,23 +22,57 @@ int _strcmp(char *s1, char *s2)
        return (compare);
 }
 
-int exit_func (char *argv[])
+int exit_func (char **argv)
 {
-	/* salida = "exit\n"; */
-	printf("exit func:%s\n",argv[0]);
-	return (0);
+	char *salida;
+	int num_exit;
+
+	salida = "exit\n";
+	if (_strcmp(salida, argv[0]) == 0)
+	{
+		if (argv[1] != NULL)
+		{
+			num_exit = _atoi(argv[1]);
+			if (num_exit < 0)
+				exit(0);
+			else if (num_exit <= 255)
+				exit(num_exit);
+			else
+				exit(num_exit % 255);
+
+		}
+		exit(0);
+	}
+	return (-1);
 }
-int  main ()
+
+void excess_argv(char *argv0, char *argv1)
 {
-	char *buffer, *token, *salida;
+	int size1, size2, size3;
+	char *text = ": 0: Can't open ";
+	char *text2 = "\n";
+
+	size1 = _strlen_recursion(argv0);
+	size2 = _strlen_recursion(argv1);
+	size3 = _strlen_recursion(text);
+ 	write(1, argv0, size1);
+	write(1, text, size3);
+	write(1, argv1, size2);
+	write(1, text2, 1);
+	exit(127);
+
+}
+int  main (int argc, char *argum[])
+{
+	char *buffer, *token;
 	size_t bufsize = 1024;
-	int characters;
 	char *argv[256];
-	int i, exec_status, atty;
+	int i, j, exec_status, atty, characters;
 	pid_t child_pid;
 
+	if (argc > 1)
+		excess_argv(argum[0],argum[1]);
 	i = atty = 0;
-	salida = "exit\n";
 	buffer = malloc(bufsize * sizeof(char));
 	if (buffer == NULL)
 		return (0);
@@ -60,27 +84,22 @@ int  main ()
 			write(1, "$ ", 2);
 		signal(SIGINT, signalhandler);
 		characters = getline(&buffer,&bufsize,stdin);
+		token = strtok(buffer, " \n\t");
+		while (token != NULL)
+		{
+			argv[i] = token;
+			token = strtok(NULL, " \n\t");
+			i++;
+		}
+		argv[i] = NULL;
 		if (characters == -1)
 		{
 			free (buffer);
 			return (0);
 		}
+		exit_func(argv);
 		if ((child_pid = fork()) == 0)
 		{
-			token = strtok(buffer, " \n\t");
-			while (token != NULL)
-			{
-				argv[i] = token;
-				token = strtok(NULL, " \n\t");
-				i++;
-			}
-			argv[i] = NULL;
-			exit_func (argv);
-			if (_strcmp(salida, argv[0]) == 0)
-			{
-				free(buffer);
-				return (0);
-			}
 			if (execve(argv[0], argv, NULL) == -1)
 				perror("Error");
 			kill(getpid(), SIGKILL);
@@ -89,6 +108,11 @@ int  main ()
 		{
 			waitpid((child_pid), &exec_status, 0);
 		}
+		for (j = 0; j < i ; j++)
+		{
+			argv[i] = NULL;
+		}
+		i = 0;
 	}
 	return (0);
 }
